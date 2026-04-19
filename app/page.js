@@ -24,9 +24,13 @@ async function api(path, options) {
 
 export default function HomePage() {
   const [dashboard, setDashboard] = useState(null);
+  const [insights, setInsights] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
   const [error, setError] = useState("");
   const [selectedBookId, setSelectedBookId] = useState(0);
+  const [bookKeyword, setBookKeyword] = useState("");
+  const [weeklyReport, setWeeklyReport] = useState("");
 
   const [bookForm, setBookForm] = useState({
     title: "",
@@ -43,14 +47,17 @@ export default function HomePage() {
   const [recommendations, setRecommendations] = useState([]);
   const [discussionKit, setDiscussionKit] = useState(null);
 
-  async function loadDashboard() {
+  async function refreshAll() {
     setBusy(true);
     setError("");
+
     try {
-      const data = await api("/api/dashboard");
-      setDashboard(data);
-      if (!selectedBookId && data.books[0]) {
-        setSelectedBookId(data.books[0].id);
+      const [dashboardData, insightsData] = await Promise.all([api("/api/dashboard"), api("/api/insights")]);
+      setDashboard(dashboardData);
+      setInsights(insightsData);
+
+      if (!selectedBookId && dashboardData.books[0]) {
+        setSelectedBookId(dashboardData.books[0].id);
       }
     } catch (err) {
       setError(err.message || "加载失败");
@@ -60,7 +67,7 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    loadDashboard();
+    refreshAll();
   }, []);
 
   useEffect(() => {
@@ -89,6 +96,18 @@ export default function HomePage() {
     [books, selectedBookId]
   );
 
+  const filteredBooks = useMemo(() => {
+    const keyword = bookKeyword.trim().toLowerCase();
+    if (!keyword) {
+      return books;
+    }
+
+    return books.filter((book) => {
+      const haystack = `${book.title} ${book.author}`.toLowerCase();
+      return haystack.includes(keyword);
+    });
+  }, [books, bookKeyword]);
+
   async function addBook(event) {
     event.preventDefault();
     try {
@@ -100,7 +119,7 @@ export default function HomePage() {
         }),
       });
       setBookForm({ title: "", author: "", totalPages: "", theme: recommendTheme });
-      await loadDashboard();
+      await refreshAll();
     } catch (err) {
       setError(err.message || "新增书籍失败");
     }
@@ -112,9 +131,26 @@ export default function HomePage() {
         method: "PUT",
         body: JSON.stringify(patch),
       });
-      await loadDashboard();
+      await refreshAll();
     } catch (err) {
       setError(err.message || "更新书籍失败");
+    }
+  }
+
+  async function removeBook(id, title) {
+    const ok = window.confirm(`确认删除《${title}》吗？该书的打卡、摘录和笔记会一并删除。`);
+    if (!ok) {
+      return;
+    }
+
+    try {
+      await api(`/api/books/${id}`, { method: "DELETE" });
+      if (selectedBookId === id) {
+        setSelectedBookId(0);
+      }
+      await refreshAll();
+    } catch (err) {
+      setError(err.message || "删除书籍失败");
     }
   }
 
@@ -132,7 +168,7 @@ export default function HomePage() {
         }),
       });
       setCheckinForm({ pages: "", minutes: "" });
-      await loadDashboard();
+      await refreshAll();
     } catch (err) {
       setError(err.message || "打卡失败");
     }
@@ -153,7 +189,7 @@ export default function HomePage() {
         }),
       });
       setQuoteForm({ text: "", note: "", sourcePage: "" });
-      await loadDashboard();
+      await refreshAll();
     } catch (err) {
       setError(err.message || "保存摘录失败");
     }
@@ -174,7 +210,7 @@ export default function HomePage() {
         }),
       });
       setNoteForm({ chapter: "", summary: "", action: "" });
-      await loadDashboard();
+      await refreshAll();
     } catch (err) {
       setError(err.message || "保存章节笔记失败");
     }
@@ -186,13 +222,39 @@ export default function HomePage() {
         method: "POST",
         body: JSON.stringify({ remembered }),
       });
-      await loadDashboard();
+      await refreshAll();
     } catch (err) {
       setError(err.message || "复习记录失败");
     }
   }
 
+  async function generateWeeklyReport() {
+    setReportBusy(true);
+    try {
+      const data = await api("/api/reports/weekly");
+      setWeeklyReport(data.markdown || "");
+    } catch (err) {
+      setError(err.message || "生成周报失败");
+    } finally {
+      setReportBusy(false);
+    }
+  }
+
+  async function copyWeeklyReport() {
+    if (!weeklyReport) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(weeklyReport);
+    } catch (err) {
+      setError("复制失败，请手动复制文本");
+    }
+  }
+
   const stats = dashboard?.stats;
+  const monthlyGoal = insights?.monthlyGoal;
+  const trendMaxPages = Math.max(...(insights?.trend || []).map((item) => item.pages), 1);
 
   return (
     <main className="reading-shell">
@@ -226,7 +288,16 @@ export default function HomePage() {
       <div className="workspace-grid">
         <section className="panel" style={{ "--delay": "80ms" }}>
           <h2>书架管理</h2>
-          <p className="panel-sub">管理想读、在读、读完状态与进度。</p>
+          <p className="panel-sub">管理想读、在读、读完状态与进度，支持快速检索与删除。</p>
+
+          <div className="toolbar">
+            <input
+              className="book-search"
+              placeholder="搜索书名或作者"
+              value={bookKeyword}
+              onChange={(event) => setBookKeyword(event.target.value)}
+            />
+          </div>
 
           <form className="form-grid" onSubmit={addBook}>
             <input
@@ -262,7 +333,7 @@ export default function HomePage() {
           </form>
 
           <ul className="book-list">
-            {books.map((book) => (
+            {filteredBooks.map((book) => (
               <li
                 key={book.id}
                 className={selectedBook?.id === book.id ? "active" : ""}
@@ -294,10 +365,57 @@ export default function HomePage() {
                       </option>
                     ))}
                   </select>
+                  <button
+                    className="danger"
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      removeBook(book.id, book.title);
+                    }}
+                  >
+                    删除
+                  </button>
                 </div>
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="panel" style={{ "--delay": "100ms" }}>
+          <h2>阅读趋势与目标</h2>
+          <p className="panel-sub">最近 7 天阅读趋势 + 本月目标进度，帮你判断节奏是否稳定。</p>
+
+          <div className="trend-bars">
+            {(insights?.trend || []).map((item) => {
+              const height = Math.max(8, Math.round((item.pages / trendMaxPages) * 90));
+              return (
+                <div key={item.date} className="trend-item">
+                  <div className="bar-wrap">
+                    <div className="bar-fill" style={{ height: `${height}%` }} />
+                  </div>
+                  <strong>{item.pages}页</strong>
+                  <small>{item.date.slice(5)}</small>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="goal-block">
+            <div>
+              <span>本月页数目标 {monthlyGoal?.monthlyPages || 0}/{monthlyGoal?.targetPages || 0}</span>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${monthlyGoal?.pagesRate || 0}%` }} />
+              </div>
+            </div>
+            <div>
+              <span>本月时长目标 {monthlyGoal?.monthlyMinutes || 0}/{monthlyGoal?.targetMinutes || 0} 分钟</span>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${monthlyGoal?.minutesRate || 0}%` }} />
+              </div>
+            </div>
+          </div>
+
+          <p className="helper-text">建议：{insights?.suggestion || "先完成今天的阅读打卡。"}</p>
         </section>
 
         <section className="panel" style={{ "--delay": "120ms" }}>
@@ -495,6 +613,28 @@ export default function HomePage() {
               <li key={item.id}>{item.link}</li>
             ))}
           </ul>
+        </section>
+
+        <section className="panel panel-wide" style={{ "--delay": "320ms" }}>
+          <h2>周报导出</h2>
+          <p className="panel-sub">一键生成中文阅读周报，支持复制到飞书、语雀或社群。</p>
+
+          <div className="inline-buttons">
+            <button className="primary" type="button" onClick={generateWeeklyReport} disabled={reportBusy}>
+              {reportBusy ? "生成中..." : "生成周报"}
+            </button>
+            <button type="button" onClick={copyWeeklyReport} disabled={!weeklyReport}>
+              复制周报
+            </button>
+          </div>
+
+          <textarea
+            className="report-box"
+            rows={12}
+            value={weeklyReport}
+            readOnly
+            placeholder="点击“生成周报”后，这里会出现本周阅读总结。"
+          />
         </section>
       </div>
     </main>

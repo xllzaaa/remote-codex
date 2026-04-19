@@ -122,6 +122,10 @@ h3 {
   box-shadow: var(--shadow);
 }
 
+.panel-wide {
+  grid-column: span 12;
+}
+
 .panel h2 {
   margin: 0;
   font-size: 1.46rem;
@@ -144,6 +148,14 @@ h3 {
 
 .form-grid.compact {
   grid-template-columns: 1fr 1fr auto;
+}
+
+.toolbar {
+  margin-bottom: 10px;
+}
+
+.book-search {
+  width: 100%;
 }
 
 input,
@@ -186,6 +198,12 @@ button.primary {
   background: var(--accent);
   color: #fff;
   border-color: #c14916;
+}
+
+button.danger {
+  background: #fdecea;
+  color: #8f241f;
+  border-color: #e6b9b6;
 }
 
 .book-list,
@@ -234,6 +252,7 @@ button.primary {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .inline-controls label {
@@ -245,6 +264,77 @@ button.primary {
 .inline-controls input[type="range"] {
   padding: 0;
   margin-top: 4px;
+}
+
+.trend-bars {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  align-items: end;
+  margin-top: 8px;
+}
+
+.trend-item {
+  text-align: center;
+}
+
+.bar-wrap {
+  height: 92px;
+  border-radius: 10px;
+  border: 1px solid #d9c9b0;
+  background: #fff9ef;
+  display: flex;
+  align-items: flex-end;
+  padding: 4px;
+}
+
+.bar-fill {
+  width: 100%;
+  border-radius: 8px;
+  background: linear-gradient(180deg, #f08b56, #d3602c);
+  transition: height 260ms ease;
+}
+
+.trend-item strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.trend-item small {
+  font-size: 11px;
+}
+
+.goal-block {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.goal-block span {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #eadfce;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ef8a55, #d3602c);
+}
+
+.helper-text {
+  margin-top: 12px;
+  color: var(--muted);
 }
 
 .tag {
@@ -294,6 +384,16 @@ button.primary {
   margin: 0 0 4px;
 }
 
+.report-box {
+  width: 100%;
+  margin-top: 12px;
+  border-radius: 12px;
+  border: 1px solid #d8c6ab;
+  background: #fffaf1;
+  padding: 12px;
+  line-height: 1.45;
+}
+
 small {
   color: var(--muted);
 }
@@ -340,5 +440,9 @@ small {
 
   .stats-strip {
     grid-template-columns: 1fr;
+  }
+
+  .trend-bars {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
