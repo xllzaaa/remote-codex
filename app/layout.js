@@ -1,4 +1,5 @@
 import { ClerkProvider } from "@clerk/nextjs";
+import { zhCN } from "@clerk/localizations";
 import "./globals.css";
 
 export const metadata = {
@@ -8,7 +9,21 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      localization={zhCN}
+      signInUrl="/sign-in"
+      signUpUrl="/sign-up"
+      afterSignOutUrl="/"
+      appearance={{
+        variables: {
+          colorPrimary: "#d3602c",
+          colorText: "#1d1a17",
+          colorBackground: "#fdf8ee",
+          borderRadius: "12px",
+          fontFamily: '"Avenir Next", "Trebuchet MS", "Gill Sans", sans-serif',
+        },
+      }}
+    >
       <html lang="zh-CN">
         <body>{children}</body>
       </html>

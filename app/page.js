@@ -1,6 +1,7 @@
 "use client";
 
-import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
+import { UserButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 const STATUS_OPTIONS = ["想读", "在读", "读完"];
@@ -376,15 +377,14 @@ export default function HomePage() {
           <h1>登录后，书架、笔记和打卡都会只属于你。</h1>
           <p className="hero-copy">每个人都有独立阅读数据。之后你还可以选择公开分享自己的阅读进度。</p>
           <div className="auth-actions">
-            <SignInButton mode="modal">
-              <button className="primary" type="button">
-                登录
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button type="button">创建账号</button>
-            </SignUpButton>
+            <Link className="button-link primary-link" href="/sign-in">
+              登录
+            </Link>
+            <Link className="button-link" href="/sign-up">
+              创建账号
+            </Link>
           </div>
+          <p className="auth-hint">注册密码请使用未泄露过的强密码，例如大小写字母、数字和符号组合；不要使用 88888888、12345678 这类常见密码。</p>
         </section>
       </main>
     );
