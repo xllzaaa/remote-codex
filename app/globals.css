@@ -401,6 +401,55 @@ button.danger {
   color: var(--muted);
 }
 
+.rhythm-block {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(167, 147, 115, 0.35);
+}
+
+.rhythm-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.rhythm-head h3 {
+  margin: 0 0 4px;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.heat-cell {
+  aspect-ratio: 1;
+  min-width: 0;
+  border-radius: 5px;
+  background: #ece6da;
+  border: 1px solid rgba(102, 114, 90, 0.12);
+}
+
+.heat-1 {
+  background: #d9e8cf;
+}
+
+.heat-2 {
+  background: #a8d18f;
+}
+
+.heat-3 {
+  background: #63ad5a;
+}
+
+.heat-4 {
+  background: #2f7d45;
+}
+
 .tag {
   font-size: 11px;
   text-transform: uppercase;
@@ -541,6 +590,10 @@ small {
 
   .plan-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .heatmap-grid {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .trend-bars {

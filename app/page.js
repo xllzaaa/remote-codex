@@ -537,6 +537,28 @@ export default function HomePage() {
           </div>
 
           <p className="helper-text">建议：{insights?.suggestion || "先完成今天的阅读打卡。"}</p>
+
+          <div className="rhythm-block">
+            <div className="rhythm-head">
+              <div>
+                <h3>28 天阅读热力</h3>
+                <small>活跃 {insights?.rhythm?.activeDays || 0} 天 · 节奏评分 {insights?.rhythm?.consistencyScore || 0}</small>
+              </div>
+              <small>
+                最强一天：{insights?.rhythm?.bestDay?.date?.slice(5) || "--"} · {insights?.rhythm?.bestDay?.pages || 0} 页
+              </small>
+            </div>
+
+            <div className="heatmap-grid" aria-label="最近 28 天阅读热力">
+              {(insights?.calendar || []).map((day) => (
+                <span
+                  key={day.date}
+                  className={`heat-cell heat-${day.level}`}
+                  title={`${day.date}：${day.pages} 页 / ${day.minutes} 分钟`}
+                />
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="panel" style={{ "--delay": "120ms" }}>
