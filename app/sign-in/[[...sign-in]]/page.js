@@ -1,6 +1,14 @@
 import { SignIn } from "@clerk/nextjs";
 import Link from "next/link";
 
+const emailOnlyAppearance = {
+  elements: {
+    socialButtonsBlockButton: { display: "none" },
+    socialButtons: { display: "none" },
+    dividerRow: { display: "none" },
+  },
+};
+
 export default function SignInPage() {
   return (
     <main className="reading-shell auth-page">
@@ -10,7 +18,7 @@ export default function SignInPage() {
         <p>登录后会加载你的独立书架、打卡记录、摘录和公开分享链接。</p>
         <Link href="/">返回首页</Link>
       </section>
-      <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" />
+      <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" appearance={emailOnlyAppearance} />
     </main>
   );
 }
