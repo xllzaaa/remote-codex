@@ -1,5 +1,6 @@
 "use client";
 
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 import { useEffect, useMemo, useState } from "react";
 
 const STATUS_OPTIONS = ["想读", "在读", "读完"];
@@ -24,9 +25,11 @@ async function api(path, options) {
 }
 
 export default function HomePage() {
+  const { isLoaded, isSignedIn, user } = useUser();
   const [dashboard, setDashboard] = useState(null);
   const [insights, setInsights] = useState(null);
   const [todayPlan, setTodayPlan] = useState(null);
+  const [shareProfile, setShareProfile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [reportBusy, setReportBusy] = useState(false);
   const [error, setError] = useState("");
@@ -56,16 +59,18 @@ export default function HomePage() {
     setError("");
 
     try {
-      const [dashboardData, insightsData, todoData, planData] = await Promise.all([
+      const [dashboardData, insightsData, todoData, planData, shareData] = await Promise.all([
         api("/api/dashboard"),
         api("/api/insights"),
         api("/api/todos"),
         api("/api/plans/today"),
+        api("/api/share/profile"),
       ]);
       setDashboard(dashboardData);
       setInsights(insightsData);
       setTodos(todoData.todos || []);
       setTodayPlan(planData);
+      setShareProfile(shareData);
 
       if (!selectedBookId && dashboardData.books[0]) {
         setSelectedBookId(dashboardData.books[0].id);
@@ -78,11 +83,13 @@ export default function HomePage() {
   }
 
   useEffect(() => {
-    refreshAll();
-  }, []);
+    if (isLoaded && isSignedIn) {
+      refreshAll();
+    }
+  }, [isLoaded, isSignedIn]);
 
   useEffect(() => {
-    if (!selectedBookId) {
+    if (!isSignedIn || !selectedBookId) {
       return;
     }
 
@@ -99,7 +106,7 @@ export default function HomePage() {
     })().catch((err) => {
       setError(err.message || "智能模块加载失败");
     });
-  }, [selectedBookId, recommendTheme]);
+  }, [isSignedIn, selectedBookId, recommendTheme]);
 
   const books = dashboard?.books || [];
   const selectedBook = useMemo(
@@ -332,13 +339,64 @@ export default function HomePage() {
     }
   }
 
+  async function copyShareLink() {
+    if (!shareProfile?.url) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareProfile.url);
+    } catch (err) {
+      setError("复制分享链接失败，请手动复制。");
+    }
+  }
+
   const stats = dashboard?.stats;
   const monthlyGoal = insights?.monthlyGoal;
   const trendMaxPages = Math.max(...(insights?.trend || []).map((item) => item.pages), 1);
   const pendingTodos = todos.filter((item) => !item.done).length;
 
+  if (!isLoaded) {
+    return (
+      <main className="reading-shell">
+        <section className="hero" style={{ "--delay": "0ms" }}>
+          <p className="eyebrow">阅读实验室</p>
+          <h1>正在打开你的私人书房。</h1>
+          <p className="hero-copy">稍等一下，正在确认登录状态。</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <main className="reading-shell auth-shell">
+        <section className="hero" style={{ "--delay": "0ms" }}>
+          <p className="eyebrow">阅读实验室</p>
+          <h1>登录后，书架、笔记和打卡都会只属于你。</h1>
+          <p className="hero-copy">每个人都有独立阅读数据。之后你还可以选择公开分享自己的阅读进度。</p>
+          <div className="auth-actions">
+            <SignInButton mode="modal">
+              <button className="primary" type="button">
+                登录
+              </button>
+            </SignInButton>
+            <SignUpButton mode="modal">
+              <button type="button">创建账号</button>
+            </SignUpButton>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="reading-shell">
+      <div className="account-bar">
+        <span>{user?.firstName || user?.primaryEmailAddress?.emailAddress || "我的账号"}</span>
+        <UserButton afterSignOutUrl="/" />
+      </div>
+
       <section className="hero" style={{ "--delay": "0ms" }}>
         <p className="eyebrow">阅读实验室</p>
         <h1>一本书，从进度到行动，在同一个工作台完成。</h1>
@@ -402,6 +460,22 @@ export default function HomePage() {
           <small>到期摘录：{todayPlan?.reviewCount || 0} 条</small>
           <button className="primary" type="button" onClick={useTodayPlan} disabled={!todayPlan?.focusBook}>
             使用这个计划打卡
+          </button>
+        </div>
+      </section>
+
+      <section className="share-strip" style={{ "--delay": "300ms" }}>
+        <div>
+          <p className="eyebrow">公开分享</p>
+          <h2>你的只读阅读页已经准备好。</h2>
+          <p className="panel-sub">{shareProfile?.url || "正在生成分享链接。"}</p>
+        </div>
+        <div className="inline-buttons">
+          <a className="button-link" href={shareProfile?.url || "#"} target="_blank" rel="noreferrer">
+            打开公开页
+          </a>
+          <button type="button" onClick={copyShareLink} disabled={!shareProfile?.url}>
+            复制链接
           </button>
         </div>
       </section>
