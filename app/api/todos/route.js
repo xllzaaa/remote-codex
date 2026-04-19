@@ -9,9 +9,14 @@ export async function POST(request) {
   const text = typeof body.text === "string" ? body.text.trim() : "";
 
   if (!text) {
-    return Response.json({ error: "text is required" }, { status: 400 });
+    return Response.json({ error: "请填写任务内容" }, { status: 400 });
   }
 
-  const todo = createTodo(text);
+  const todo = createTodo({
+    text,
+    priority: body.priority,
+    bookId: body.bookId,
+  });
+
   return Response.json({ todo }, { status: 201 });
 }

@@ -8,6 +8,7 @@ const STATUS_CLASS = {
   在读: "reading",
   读完: "finished",
 };
+const TODO_PRIORITY_OPTIONS = ["高", "中", "低"];
 
 async function api(path, options) {
   const res = await fetch(path, {
@@ -46,15 +47,22 @@ export default function HomePage() {
   const [recommendTheme, setRecommendTheme] = useState("效率");
   const [recommendations, setRecommendations] = useState([]);
   const [discussionKit, setDiscussionKit] = useState(null);
+  const [todos, setTodos] = useState([]);
+  const [todoForm, setTodoForm] = useState({ text: "", priority: "中", bookId: "" });
 
   async function refreshAll() {
     setBusy(true);
     setError("");
 
     try {
-      const [dashboardData, insightsData] = await Promise.all([api("/api/dashboard"), api("/api/insights")]);
+      const [dashboardData, insightsData, todoData] = await Promise.all([
+        api("/api/dashboard"),
+        api("/api/insights"),
+        api("/api/todos"),
+      ]);
       setDashboard(dashboardData);
       setInsights(insightsData);
+      setTodos(todoData.todos || []);
 
       if (!selectedBookId && dashboardData.books[0]) {
         setSelectedBookId(dashboardData.books[0].id);
@@ -228,6 +236,63 @@ export default function HomePage() {
     }
   }
 
+  async function addTodo(event) {
+    event.preventDefault();
+    const text = todoForm.text.trim();
+    if (!text) {
+      setError("请填写任务内容");
+      return;
+    }
+
+    try {
+      await api("/api/todos", {
+        method: "POST",
+        body: JSON.stringify({
+          text,
+          priority: todoForm.priority,
+          bookId: todoForm.bookId ? Number(todoForm.bookId) : null,
+        }),
+      });
+      setTodoForm({ text: "", priority: "中", bookId: selectedBook?.id ? String(selectedBook.id) : "" });
+      await refreshAll();
+    } catch (err) {
+      setError(err.message || "新增任务失败");
+    }
+  }
+
+  async function toggleTodoDone(todo) {
+    try {
+      await api(`/api/todos/${todo.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ done: !todo.done }),
+      });
+      await refreshAll();
+    } catch (err) {
+      setError(err.message || "更新任务状态失败");
+    }
+  }
+
+  async function changeTodoPriority(todo, priority) {
+    try {
+      await api(`/api/todos/${todo.id}`, {
+        method: "PUT",
+        body: JSON.stringify({ priority }),
+      });
+      await refreshAll();
+    } catch (err) {
+      setError(err.message || "更新优先级失败");
+    }
+  }
+
+  async function removeTodo(id) {
+    try {
+      await api(`/api/todos/${id}`, { method: "DELETE" });
+      await refreshAll();
+    } catch (err) {
+      setError(err.message || "删除任务失败");
+    }
+  }
+
   async function generateWeeklyReport() {
     setReportBusy(true);
     try {
@@ -255,6 +320,7 @@ export default function HomePage() {
   const stats = dashboard?.stats;
   const monthlyGoal = insights?.monthlyGoal;
   const trendMaxPages = Math.max(...(insights?.trend || []).map((item) => item.pages), 1);
+  const pendingTodos = todos.filter((item) => !item.done).length;
 
   return (
     <main className="reading-shell">
@@ -280,8 +346,8 @@ export default function HomePage() {
           <strong>{stats?.totalPages || 0}</strong>
         </article>
         <article className="stat" style={{ "--delay": "240ms" }}>
-          <span>在读书籍数</span>
-          <strong>{stats?.readingCount || 0} 本</strong>
+          <span>待办行动数</span>
+          <strong>{pendingTodos} 项</strong>
         </article>
       </section>
 
@@ -462,6 +528,75 @@ export default function HomePage() {
                 </li>
               );
             })}
+          </ul>
+        </section>
+
+        <section className="panel" style={{ "--delay": "140ms" }}>
+          <h2>阅读行动清单</h2>
+          <p className="panel-sub">把“知道”变成“做到”，优先完成高优任务。</p>
+
+          <form className="form-grid" onSubmit={addTodo}>
+            <input
+              placeholder="例如：整理第 4 章 3 个要点"
+              value={todoForm.text}
+              onChange={(event) => setTodoForm((prev) => ({ ...prev, text: event.target.value }))}
+            />
+            <select
+              value={todoForm.priority}
+              onChange={(event) => setTodoForm((prev) => ({ ...prev, priority: event.target.value }))}
+            >
+              {TODO_PRIORITY_OPTIONS.map((priority) => (
+                <option key={priority} value={priority}>
+                  {priority}优先
+                </option>
+              ))}
+            </select>
+            <select
+              value={todoForm.bookId}
+              onChange={(event) => setTodoForm((prev) => ({ ...prev, bookId: event.target.value }))}
+            >
+              <option value="">关联书籍（可选）</option>
+              {books.map((book) => (
+                <option key={book.id} value={book.id}>
+                  《{book.title}》
+                </option>
+              ))}
+            </select>
+            <button className="primary" type="submit">
+              添加任务
+            </button>
+          </form>
+
+          <ul className="todo-list">
+            {todos.map((todo) => {
+              const book = books.find((item) => item.id === todo.bookId);
+              return (
+                <li key={todo.id} className={todo.done ? "todo-done" : ""}>
+                  <label className="todo-check">
+                    <input type="checkbox" checked={todo.done} onChange={() => toggleTodoDone(todo)} />
+                    <span>{todo.text}</span>
+                  </label>
+                  <div className="todo-meta">
+                    <select value={todo.priority} onChange={(event) => changeTodoPriority(todo, event.target.value)}>
+                      {TODO_PRIORITY_OPTIONS.map((priority) => (
+                        <option key={priority} value={priority}>
+                          {priority}优先
+                        </option>
+                      ))}
+                    </select>
+                    <small>{book ? `关联：${book.title}` : "未关联书籍"}</small>
+                    <button className="danger" type="button" onClick={() => removeTodo(todo.id)}>
+                      删除
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+            {todos.length === 0 ? (
+              <li>
+                <p>暂无任务，先添加一项今天就能完成的小行动。</p>
+              </li>
+            ) : null}
           </ul>
         </section>
 

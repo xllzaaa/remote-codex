@@ -211,7 +211,8 @@ button.danger {
 .note-list,
 .timeline,
 .mini-list,
-.graph-list {
+.graph-list,
+.todo-list {
   list-style: none;
   margin: 12px 0 0;
   padding: 0;
@@ -222,7 +223,8 @@ button.danger {
 .note-list li,
 .timeline li,
 .mini-list li,
-.graph-list li {
+.graph-list li,
+.todo-list li {
   border-top: 1px solid rgba(167, 147, 115, 0.35);
   padding: 10px 0;
 }
@@ -377,6 +379,35 @@ button.danger {
   display: flex;
   gap: 8px;
   margin-top: 8px;
+}
+
+.todo-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.todo-check input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.todo-meta {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.todo-meta select {
+  width: auto;
+}
+
+.todo-done .todo-check span {
+  text-decoration: line-through;
+  color: #8a7d6b;
 }
 
 .quote-list p,

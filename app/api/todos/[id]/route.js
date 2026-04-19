@@ -8,12 +8,12 @@ function toId(param) {
 export async function GET(_request, { params }) {
   const id = toId(params.id);
   if (!id) {
-    return Response.json({ error: "invalid id" }, { status: 400 });
+    return Response.json({ error: "任务 ID 无效" }, { status: 400 });
   }
 
   const todo = getTodo(id);
   if (!todo) {
-    return Response.json({ error: "not found" }, { status: 404 });
+    return Response.json({ error: "任务不存在" }, { status: 404 });
   }
 
   return Response.json({ todo });
@@ -22,7 +22,7 @@ export async function GET(_request, { params }) {
 export async function PUT(request, { params }) {
   const id = toId(params.id);
   if (!id) {
-    return Response.json({ error: "invalid id" }, { status: 400 });
+    return Response.json({ error: "任务 ID 无效" }, { status: 400 });
   }
 
   const body = await request.json().catch(() => ({}));
@@ -31,7 +31,7 @@ export async function PUT(request, { params }) {
   if (typeof body.text === "string") {
     patch.text = body.text.trim();
     if (!patch.text) {
-      return Response.json({ error: "text cannot be empty" }, { status: 400 });
+      return Response.json({ error: "任务内容不能为空" }, { status: 400 });
     }
   }
 
@@ -39,9 +39,17 @@ export async function PUT(request, { params }) {
     patch.done = body.done;
   }
 
+  if (typeof body.priority === "string") {
+    patch.priority = body.priority;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "bookId")) {
+    patch.bookId = body.bookId;
+  }
+
   const todo = updateTodo(id, patch);
   if (!todo) {
-    return Response.json({ error: "not found" }, { status: 404 });
+    return Response.json({ error: "任务不存在" }, { status: 404 });
   }
 
   return Response.json({ todo });
@@ -50,12 +58,12 @@ export async function PUT(request, { params }) {
 export async function DELETE(_request, { params }) {
   const id = toId(params.id);
   if (!id) {
-    return Response.json({ error: "invalid id" }, { status: 400 });
+    return Response.json({ error: "任务 ID 无效" }, { status: 400 });
   }
 
   const ok = deleteTodo(id);
   if (!ok) {
-    return Response.json({ error: "not found" }, { status: 404 });
+    return Response.json({ error: "任务不存在" }, { status: 404 });
   }
 
   return Response.json({ success: true });
