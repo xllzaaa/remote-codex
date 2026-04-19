@@ -41,7 +41,8 @@ h3 {
 
 .hero,
 .stat,
-.panel {
+.panel,
+.today-plan {
   animation: rise 600ms ease both;
   animation-delay: var(--delay, 0ms);
 }
@@ -82,6 +83,67 @@ h3 {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.today-plan {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1.15fr) minmax(280px, 1.35fr);
+  gap: 16px 22px;
+  padding: 18px;
+  border: 1px solid #c9d7c2;
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(238, 246, 230, 0.95), rgba(247, 250, 239, 0.88)),
+    repeating-linear-gradient(90deg, rgba(36, 64, 38, 0.06) 0 1px, transparent 1px 18px);
+}
+
+.today-plan h2 {
+  margin: 0;
+  font-size: 1.65rem;
+}
+
+.plan-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.plan-metrics span {
+  display: block;
+  min-height: 74px;
+  padding: 10px;
+  border: 1px solid rgba(94, 127, 86, 0.28);
+  border-radius: 8px;
+  background: rgba(255, 255, 250, 0.58);
+  color: #52604c;
+  font-size: 12px;
+}
+
+.plan-metrics strong {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink);
+  font-size: 1.2rem;
+}
+
+.plan-steps {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding-left: 20px;
+}
+
+.plan-steps li {
+  margin: 7px 0;
+}
+
+.plan-footer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .stat {
@@ -182,7 +244,7 @@ textarea {
 
 button {
   border: 1px solid #c7b598;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 9px 12px;
   background: #fff6e7;
   cursor: pointer;
@@ -446,6 +508,10 @@ small {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .today-plan {
+    grid-template-columns: 1fr;
+  }
+
   .panel {
     grid-column: span 12;
   }
@@ -471,6 +537,10 @@ small {
 
   .stats-strip {
     grid-template-columns: 1fr;
+  }
+
+  .plan-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .trend-bars {

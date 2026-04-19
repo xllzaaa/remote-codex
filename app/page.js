@@ -26,6 +26,7 @@ async function api(path, options) {
 export default function HomePage() {
   const [dashboard, setDashboard] = useState(null);
   const [insights, setInsights] = useState(null);
+  const [todayPlan, setTodayPlan] = useState(null);
   const [busy, setBusy] = useState(false);
   const [reportBusy, setReportBusy] = useState(false);
   const [error, setError] = useState("");
@@ -55,14 +56,16 @@ export default function HomePage() {
     setError("");
 
     try {
-      const [dashboardData, insightsData, todoData] = await Promise.all([
+      const [dashboardData, insightsData, todoData, planData] = await Promise.all([
         api("/api/dashboard"),
         api("/api/insights"),
         api("/api/todos"),
+        api("/api/plans/today"),
       ]);
       setDashboard(dashboardData);
       setInsights(insightsData);
       setTodos(todoData.todos || []);
+      setTodayPlan(planData);
 
       if (!selectedBookId && dashboardData.books[0]) {
         setSelectedBookId(dashboardData.books[0].id);
@@ -293,6 +296,18 @@ export default function HomePage() {
     }
   }
 
+  function useTodayPlan() {
+    if (!todayPlan?.focusBook) {
+      return;
+    }
+
+    setSelectedBookId(todayPlan.focusBook.id);
+    setCheckinForm({
+      pages: String(todayPlan.pagesTarget || ""),
+      minutes: String(todayPlan.minutesTarget || ""),
+    });
+  }
+
   async function generateWeeklyReport() {
     setReportBusy(true);
     try {
@@ -349,6 +364,46 @@ export default function HomePage() {
           <span>待办行动数</span>
           <strong>{pendingTodos} 项</strong>
         </article>
+      </section>
+
+      <section className="today-plan" style={{ "--delay": "260ms" }}>
+        <div>
+          <p className="eyebrow">今日阅读计划</p>
+          <h2>{todayPlan?.focusBook ? `继续读《${todayPlan.focusBook.title}》` : "先建立今天的阅读入口"}</h2>
+          <p className="panel-sub">{todayPlan?.reason || "正在生成今天的阅读安排。"}</p>
+        </div>
+
+        <div className="plan-metrics">
+          <span>
+            目标页数
+            <strong>{todayPlan?.pagesTarget || 0} 页</strong>
+          </span>
+          <span>
+            预计时长
+            <strong>{todayPlan?.minutesTarget || 0} 分钟</strong>
+          </span>
+          <span>
+            剩余阅读
+            <strong>{todayPlan?.remainingPages || 0} 页</strong>
+          </span>
+          <span>
+            预计完成
+            <strong>{todayPlan?.estimatedFinishDays || 0} 天</strong>
+          </span>
+        </div>
+
+        <ol className="plan-steps">
+          {(todayPlan?.checklist || []).map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ol>
+
+        <div className="plan-footer">
+          <small>到期摘录：{todayPlan?.reviewCount || 0} 条</small>
+          <button className="primary" type="button" onClick={useTodayPlan} disabled={!todayPlan?.focusBook}>
+            使用这个计划打卡
+          </button>
+        </div>
       </section>
 
       <div className="workspace-grid">
