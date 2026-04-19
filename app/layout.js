@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Vibe Coding Todos",
-  description: "Minimal Next.js todo app for vibe coding",
+  title: "Reading Lab",
+  description: "A vibe-coded reading workspace",
 };
 
 export default function RootLayout({ children }) {
